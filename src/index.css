@@ -121,3 +121,5 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 @media (prefers-reduced-motion: reduce) {
   *,*::before,*::after { transition-duration: .01ms!important; animation-duration: .01ms!important; }
 }
+
+@media (max-width: 600px) { .machine-tabs { overflow-x: auto; scrollbar-width: none; } .machine-tabs::-webkit-scrollbar { display: none; } .machine-tabs button { min-width: 0; font-size: 9px; padding-left: 4px; padding-right: 4px; } }

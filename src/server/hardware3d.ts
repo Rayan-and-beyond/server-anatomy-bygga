@@ -1,3 +1,4 @@
+import { makeMacMiniPart } from './macMini3d';
 import * as THREE from 'three';
 import type { MachineId } from './catalog';
 import { makePartGeometry as makeR760 } from './geometry';
@@ -661,6 +662,7 @@ const RACK:Record<string,(g:THREE.Group)=>void>={
   powers:rackPower,liquid:rackLiquid,backplane:rackBackplane,modules:rackDetail,cooling:rackCooling,
 };
 export function makeGeometry(machine:MachineId,id:string):THREE.Group{
+  if(machine==='macmini')return makeMacMiniPart(id);
   if(machine==='r760')return makeR760(id.replace(/^r760:/,'') as Parameters<typeof makeR760>[0]);
   const g=new THREE.Group();g.name=id;
   const fn=(machine==='xe9680'?XE:machine==='dgxb200'?DGX:RACK)[id];

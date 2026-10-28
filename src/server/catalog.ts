@@ -1,7 +1,8 @@
+import { MAC_MINI } from './macMini';
 import type { Vec3 } from '../lib/types';
 import { COMPONENTS, WALKTHROUGH } from './data';
 
-export type MachineId = 'r760' | 'xe9680' | 'dgxb200' | 'gb200rack';
+export type MachineId = 'r760' | 'xe9680' | 'dgxb200' | 'gb200rack' | 'macmini';
 export interface Assembly {
   id: string;
   label: string;
@@ -146,6 +147,6 @@ id:'gb200rack',name:'GB200 NVL72',sub:'NVIDIA · full-scale liquid-cooled rack',
 description:'A 72-GPU, 36-Grace-CPU rack of eighteen compute trays and nine NVLink switches.',
 reference:'https://docs.nvidia.com/dgx/dgxgb200-user-guide/hardware.html',
 assemblies:rackAssemblies,guide:rackGuide,view:{az:.48,el:.20,distance:3900},scale:1800
-}];
+}, MAC_MINI];
 
 export function getMachine(id:MachineId){return MACHINES.find(m=>m.id===id)!;}

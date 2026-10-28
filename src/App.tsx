@@ -8,12 +8,13 @@ const firstSelected: Record<MachineId,string> = {
   xe9680:'gpus',
   dgxb200:'gpus',
   gb200rack:'computes',
+  macmini:'housing',
 };
 
 export default function App() {
-  const [id,setId]=useState<MachineId>('gb200rack');
+  const [id,setId]=useState<MachineId>('macmini');
   const [mode,setMode]=useState<'explore'|'guide'>('explore');
-  const [selected,setSelected]=useState<string>('computes');
+  const [selected,setSelected]=useState<string>('housing');
   const [step,setStep]=useState(0);
   const [explode,setExplode]=useState(0);
   const [collapsed,setCollapsed]=useState(false);
@@ -41,6 +42,7 @@ export default function App() {
   }
   function selectPart(value:string){
     setSelected(value);
+    if(id==='macmini' && value!=='housing' && explode<32) setExplode(58);
     if(mode==='guide')setMode('explore');
   }
   function nextStep(value:number){
@@ -83,10 +85,10 @@ export default function App() {
     <section className='viewport' aria-label={'Interactive '+machine.name+' hardware'}>
       <Viewer machineId={id} mode={mode} explode={explode} step={step} selected={selected}
         resetToken={resetToken} onSelect={selectPart} onError={setError}/>
-      <nav className='machine-tabs' aria-label='Choose a server'>
-        {[getMachine('gb200rack'),...MACHINES.filter(m=>m.id!=='gb200rack')].map(m=><button key={m.id} onClick={()=>chooseMachine(m.id)}
+      <nav className='machine-tabs' aria-label='Choose hardware'>
+        {[getMachine('gb200rack'),getMachine('macmini'),...MACHINES.filter(m=>m.id!=='gb200rack'&&m.id!=='macmini')].map(m=><button key={m.id} onClick={()=>chooseMachine(m.id)}
           role='tab' aria-selected={id===m.id} className={id===m.id?'selected':''}>
-          {m.id==='r760'?'R760':m.id==='xe9680'?'XE9680':m.id==='dgxb200'?'DGX B200':'GB200 NVL72'}
+          {m.id==='r760'?'R760':m.id==='xe9680'?'XE9680':m.id==='dgxb200'?'DGX B200':m.id==='macmini'?'Mac mini':'GB200 NVL72'}
         </button>)}
       </nav>
       <div className='viewport-actions'>

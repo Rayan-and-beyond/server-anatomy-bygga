@@ -1,95 +1,98 @@
 [
   {
-    "name": "Switch between four unique server models",
+    "name": "Open real Mac mini M4 Pro and inspect exterior",
     "sanity": true,
     "viewport": "desktop",
     "covers": [
-      "four machine tabs",
-      "distinct server models",
-      "machine inspector context"
+      "Mac mini hardware tab",
+      "rounded silver 5-inch chassis",
+      "front I/O details",
+      "M4 Pro inspector"
     ],
-    "description": "Tabs replace the current model and present physically distinct systems rather than renaming a common enclosure.",
+    "description": "A recognizably compact Apple Mac mini loads with a rounded silver aluminum lid, Apple mark and front two USB-C plus headphone jack.",
     "steps": [
-      "Open the site",
-      "Click XE9680",
-      "Verify eight H200 GPU packages in the 6U chassis",
-      "Click DGX B200",
-      "Verify a taller 10U Blackwell system",
-      "Click GB200 NVL72",
-      "Verify a full-height rack with stacked tray bays"
+      "Open the gallery on the default Mac mini tab",
+      "Verify Mac mini M4 Pro title and 3D device",
+      "Orbit the case and identify front USB-C and audio ports",
+      "Move the explode slider to 55%"
     ],
-    "expected": "All four tabs operate, each has a 3D model with different chassis proportions and hardware details, and its component inspector changes."
+    "expected": "Mac mini M4 Pro is the selected tab. A silver, rounded five-inch compact Mac appears; moving the slider reveals distinct fan, logic board, power supply and other internal layers without any runtime error."
   },
   {
-    "name": "Collapse the sidebar and restore it",
+    "name": "Mac mini guided 2024 service sequence",
     "viewport": "desktop",
     "covers": [
+      "bottom opening",
+      "inner antenna plate",
+      "blower",
+      "SSD module",
+      "power supply",
+      "step-by-step"
+    ],
+    "description": "The guided sequence follows Apple's actual bottom-entry service hierarchy instead of lifting the upper lid.",
+    "steps": [
+      "Select Mac mini and click Step-by-step",
+      "Advance to Flip it over and Unclip the bottom cover",
+      "Advance to Disconnect the power button and Remove the antenna plate",
+      "Advance through fan, M4 Pro storage and power steps"
+    ],
+    "expected": "Camera presents the underside during the guide and reveals each removed component with explanatory text and safety notes; 13 steps are available."
+  },
+  {
+    "name": "Mac mini selectable internal parts",
+    "viewport": "desktop",
+    "covers": [
+      "Mac mini inspector",
+      "internal part list",
+      "automatic exploded selection"
+    ],
+    "description": "Picking an internal group from the sidebar opens the hardware for meaningful examination.",
+    "steps": [
+      "In Explore mode select the Apple M4 Pro SoC row",
+      "Observe exploded view percentage",
+      "Select the removable flash storage row",
+      "Scroll or drag to orbit"
+    ],
+    "expected": "The viewer separates enough to expose selected internal parts and the inspector explains Apple Silicon and the proprietary SSD."
+  },
+  {
+    "name": "Preserve four data-center machines and controls",
+    "viewport": "desktop",
+    "covers": [
+      "five machine tabs",
+      "R760",
+      "XE9680",
+      "DGX B200",
+      "GB200 NVL72",
       "sidebar collapse",
-      "unobstructed model viewport",
-      "sidebar restore"
+      "fullscreen"
     ],
-    "description": "Give the 3D machine all available space without leaving an empty right sidebar.",
+    "description": "Original hardware remains accessible alongside the new mini.",
     "steps": [
-      "Select GB200 NVL72",
-      "Click Hide sidebar",
-      "Observe the expanded rack viewport",
-      "Click Show sidebar"
+      "Click GB200 NVL72 and confirm rack-scale model",
+      "Click R760, XE9680 and DGX B200 in turn",
+      "Click Hide sidebar and then Show sidebar",
+      "Activate browser fullscreen and exit"
     ],
-    "expected": "Sidebar disappears and 3D viewer fills the available width; the sidebar can be restored with details intact."
+    "expected": "All five hardware tabs and model-specific detail views work; sidebar collapse expands the canvas, and fullscreen works when browser permissions allow."
   },
   {
-    "name": "Enable fullscreen mode",
-    "viewport": "desktop",
-    "covers": [
-      "browser fullscreen",
-      "exit fullscreen",
-      "fullscreen controls"
-    ],
-    "description": "Native browser fullscreen should be available from the 3D viewer.",
-    "steps": [
-      "Click Enter fullscreen",
-      "Observe the expanded viewer and active machine tabs",
-      "Click Exit fullscreen"
-    ],
-    "expected": "The experience expands using browser fullscreen when permitted, with tabs, rotate and other useful controls still accessible, and exits successfully."
-  },
-  {
-    "name": "Use exploded view and model-specific guided steps",
-    "viewport": "desktop",
-    "covers": [
-      "explode slider",
-      "guided disassembly",
-      "previous and next navigation",
-      "model-specific component focus"
-    ],
-    "description": "Four models each offer exploratory and guided decomposition rather than a static illustration.",
-    "steps": [
-      "Select DGX B200",
-      "Move the explode slider to 80%",
-      "Click Step-by-step",
-      "Click Next step several times",
-      "Click Previous step",
-      "Select GB200 NVL72 and enter Step-by-step"
-    ],
-    "expected": "Components visibly separate and model-specific walkthrough steps change the assemblies and detail explanation; GB200 rack guide discusses compute trays, NVLink switches, coolant and power."
-  },
-  {
-    "name": "Inspect hardware and access official references on mobile",
+    "name": "Mac mini mobile usability",
     "viewport": "mobile",
     "covers": [
-      "mobile four-tab layout",
-      "clickable hardware index",
-      "sidebar collapse mobile",
-      "official documentation links"
+      "five mobile tabs",
+      "mobile Mac mini scene",
+      "responsive component inspector",
+      "guide buttons"
     ],
-    "description": "All machine tabs and detail controls should work on a narrow screen.",
+    "description": "The mini 3D and bottom teardown should remain accessible at mobile width.",
     "steps": [
-      "Open on 390px mobile viewport",
-      "Select XE9680 tab",
-      "Scroll to details and choose 8 NVIDIA H200 GPUs",
-      "Hide sidebar and then show it",
-      "Open Official hardware documentation link"
+      "Open the page on a 390px wide phone",
+      "Select Mac mini",
+      "Use explode slider to 70%",
+      "Open Step-by-step and tap Next",
+      "Toggle the sidebar"
     ],
-    "expected": "The machine tab row fits on mobile, viewer and inspector are usable, sidebar can be toggled and official vendor links are accessible."
+    "expected": "Mac mini remains visible, tab selector is usable without covering controls, guided walkthrough and sidebar toggle are accessible."
   }
 ]

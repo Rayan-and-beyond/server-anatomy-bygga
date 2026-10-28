@@ -103,6 +103,7 @@ export default function Viewer(props: ViewerProps) {
     let az=machine.view.az,el=machine.view.el,zoom=1;
     let smoothAz=az,smoothEl=el,smoothZoom=zoom;
     let lastReset=props.resetToken;
+    let miniPhase='explore';
     const canvas=stage.renderer.domElement;
     canvas.style.touchAction='none';
     canvas.style.cursor='grab';
@@ -181,6 +182,15 @@ export default function Viewer(props: ViewerProps) {
       smoothAz+=(az-smoothAz)*(1-Math.exp(-dt*11));
       smoothEl+=(el-smoothEl)*(1-Math.exp(-dt*11));
       smoothZoom+=(zoom-smoothZoom)*(1-Math.exp(-dt*11));
+      if(machine.id==='macmini'){
+        const phase=v.mode==='guide'?(v.step>=1?'underside':'topside'):'explore';
+        if(phase!==miniPhase){
+          az=machine.view.az;
+          el=phase==='underside'?-.74:machine.view.el;
+          zoom=1;
+          miniPhase=phase;
+        }
+      }
       stage.tick(0);
       const guide=machine.guide[Math.min(v.step,machine.guide.length-1)];
       const selected=v.mode==='guide'?guide.focus:v.selected;
@@ -210,10 +220,10 @@ export default function Viewer(props: ViewerProps) {
       }
       // Correct orthographic framing for 2U/6U/10U and for the entire rack.
       const mobile=mount.clientWidth<650;
-      const baseHalf=machine.id==='r760'?490:machine.id==='xe9680'?645:machine.id==='dgxb200'?745:1370;
+      const baseHalf=machine.id==='macmini'?114:machine.id==='r760'?490:machine.id==='xe9680'?645:machine.id==='dgxb200'?745:1370;
       const level=v.mode==='explore'?v.explode/100:v.step/Math.max(machine.guide.length-1,1);
-      const additional=machine.id==='gb200rack'?level*290:level*205;
-      const half=(baseHalf+(mobile?(machine.id==='gb200rack'?190:120):0)+additional)/Math.max(.55,smoothZoom);
+      const additional=machine.id==='macmini'?level*154:machine.id==='gb200rack'?level*290:level*205;
+      const half=(baseHalf+(mobile?(machine.id==='gb200rack'?190:machine.id==='macmini'?18:120):0)+additional)/Math.max(.55,smoothZoom);
       const aspect=Math.max(.4,mount.clientWidth/Math.max(1,mount.clientHeight));
       stage.camera.left=-half*aspect;
       stage.camera.right=half*aspect;
@@ -224,7 +234,7 @@ export default function Viewer(props: ViewerProps) {
         Math.sin(smoothEl),
         Math.cos(smoothAz)*Math.cos(smoothEl)
       );
-      const offsetY=machine.id==='gb200rack'?1070:machine.id==='dgxb200'?186:machine.id==='xe9680'?129:42;
+      const offsetY=machine.id==='macmini'?25:machine.id==='gb200rack'?1070:machine.id==='dgxb200'?186:machine.id==='xe9680'?129:42;
       const center=new THREE.Vector3(0,offsetY,0).add(stage.root.position);
       stage.camera.position.copy(center).addScaledVector(dir,machine.view.distance);
       stage.camera.up.set(0,1,0);
