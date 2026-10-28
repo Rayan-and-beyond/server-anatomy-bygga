@@ -399,6 +399,8 @@ export function makeMacMiniPart(id:string):T.Group{
   const build=constructors[id];
   if(!build)throw new Error('Unknown Mac mini assembly: '+id);
   build(g);
+  // The M4 Pro power board is directly under the aluminum roof; components face inward.
+  if(id==='power')g.rotation.z=Math.PI;
   g.traverse(o=>{if(o instanceof T.Mesh||o instanceof T.LineSegments)o.userData.partId=id;});
   return g;
 }

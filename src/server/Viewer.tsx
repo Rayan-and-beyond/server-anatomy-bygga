@@ -223,7 +223,7 @@ export default function Viewer(props: ViewerProps) {
       const baseHalf=machine.id==='macmini'?114:machine.id==='r760'?490:machine.id==='xe9680'?645:machine.id==='dgxb200'?745:1370;
       const level=v.mode==='explore'?v.explode/100:v.step/Math.max(machine.guide.length-1,1);
       const additional=machine.id==='macmini'?level*154:machine.id==='gb200rack'?level*290:level*205;
-      const half=(baseHalf+(mobile?(machine.id==='gb200rack'?190:machine.id==='macmini'?18:120):0)+additional)/Math.max(.55,smoothZoom);
+      const half=(baseHalf+(mobile?(machine.id==='gb200rack'?190:machine.id==='macmini'?35:120):0)+additional)/Math.max(.55,smoothZoom);
       const aspect=Math.max(.4,mount.clientWidth/Math.max(1,mount.clientHeight));
       stage.camera.left=-half*aspect;
       stage.camera.right=half*aspect;
@@ -246,7 +246,7 @@ export default function Viewer(props: ViewerProps) {
       stage.shadow.visible=false;
       if(++highlightTick%8===0){
         const n=stage.parts.find(p=>p.item.ref===selected);
-        const tooBroad=machine.id==='gb200rack' && ['cabinet','computes','switches','backplane','liquid'].includes(selected);
+        const tooBroad=(machine.id==='gb200rack' && ['cabinet','computes','switches','backplane','liquid'].includes(selected)) || (machine.id==='macmini' && selected==='housing');
         if(n?.node.visible && !tooBroad){
           selectedOutline.setFromObject(n.node);
           selectedOutline.visible=true;
