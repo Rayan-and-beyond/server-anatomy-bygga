@@ -1,0 +1,66 @@
+[
+  {
+    "name": "Inspect a server component",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "component index",
+      "part inspector",
+      "component selection"
+    ],
+    "description": "Selecting a hardware system updates its explainer and selection index.",
+    "steps": [
+      "Open the server anatomy app",
+      "Click the Memory modules item in the Component Index",
+      "Read the Part Inspector"
+    ],
+    "expected": "Part Inspector displays Memory modules, its role and explanatory details, and the Memory modules index item is selected."
+  },
+  {
+    "name": "Adjust server decomposition",
+    "viewport": "desktop",
+    "covers": [
+      "exploded view slider",
+      "animated component separation"
+    ],
+    "description": "The model should separate and reassemble in response to its range control.",
+    "steps": [
+      "Locate the Decomposition slider at 43%",
+      "Move the slider to 100%",
+      "Move the slider to 0%"
+    ],
+    "expected": "The percentage changes to 100% then 0%, and the 3D server parts move apart and reassemble."
+  },
+  {
+    "name": "Reset the model",
+    "viewport": "mobile",
+    "covers": [
+      "view reset",
+      "selected component",
+      "mobile layout"
+    ],
+    "description": "Reset returns the prototype to a known usable starting state.",
+    "steps": [
+      "On mobile select Power supplies from the horizontal index",
+      "Set the decomposition slider to 100%",
+      "Tap RESET"
+    ],
+    "expected": "Selected part returns to Processors and decomposition returns to 43%; mobile layout remains usable."
+  },
+  {
+    "name": "Read navigation help and browse components",
+    "viewport": "desktop",
+    "covers": [
+      "help overlay",
+      "next and previous navigation",
+      "documentation link"
+    ],
+    "description": "Navigation remains accessible without a login.",
+    "steps": [
+      "Click the help icon above the model",
+      "Read the instructions then close them",
+      "Click Next component in the inspector"
+    ],
+    "expected": "Instructions open and close; Next component updates the inspector to the following component."
+  }
+]
