@@ -5,8 +5,8 @@ import * as T from 'three';
 const mat=(color:string,metalness=.35,roughness=.55,emissive?:string)=>
   new T.MeshStandardMaterial({color,metalness,roughness,...(emissive?{emissive,emissiveIntensity:.35}:{})});
 const M={
- aluminum:mat('#bec2c5',.87,.29),
- silver:mat('#e1e3e3',.82,.24),
+ aluminum:mat('#d0d5d7',.58,.31),
+ silver:mat('#e5e6e6',.60,.26),
  rim:mat('#9ea5aa',.83,.28),
  edge:mat('#dce0e0',.8,.25),
  black:mat('#141719',.33,.69),
@@ -114,13 +114,13 @@ function appleMark(g:T.Group){
   s.bezierCurveTo(12,13,6,14,2,9);
   s.bezierCurveTo(0,8,-2,8,-3,8);
   s.closePath();
-  const logo=new T.Mesh(new T.ShapeGeometry(s,12),mat('#818689',.82,.3));
-  logo.rotation.x=-Math.PI/2;logo.position.y=25.09;g.add(logo);
+  const logo=new T.Mesh(new T.ShapeGeometry(s,12),mat('#3d4245',.35,.31));
+  logo.rotation.x=-Math.PI/2;logo.position.y=25.60;g.add(logo);
   const leaf=new T.Shape();
   leaf.moveTo(-1,11);leaf.bezierCurveTo(-1,17,2,20,8,20);
   leaf.bezierCurveTo(8,14,5,12,-1,11);
-  const lf=new T.Mesh(new T.ShapeGeometry(leaf,12),mat('#818689',.82,.3));
-  lf.rotation.x=-Math.PI/2;lf.position.y=25.09;g.add(lf);
+  const lf=new T.Mesh(new T.ShapeGeometry(leaf,12),mat('#3d4245',.35,.31));
+  lf.rotation.x=-Math.PI/2;lf.position.y=25.60;g.add(lf);
 }
 function housing(g:T.Group){
   // Top-down: polished aluminum lid and a thin-walled hollow unibody.
@@ -135,7 +135,7 @@ function housing(g:T.Group){
   for(const x of [-31,-10]){
     roundedBlock(g,12,5.7,1.2,2.4,x,-1.5,63.85,M.rim);
     box(g,8.5,2.55,.6,x,-1.5,64.66,M.black);
-    box(g,5.1,.5,.4,x,-1.5,65.02,M.gold);
+    box(g,5.1,.5,.4,x,-1.5,65.02,M.graphite);
   }
   cyl(g,3.45,1,27,-1.0,64.15,M.graphite,30,'z');
   cyl(g,2.2,1.4,27,-1.0,64.75,M.black,28,'z');
