@@ -1,233 +1,263 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Stage } from '../engine/stage';
-import { BY_ID, COMPONENTS, WALKTHROUGH, createPlan, type ComponentId } from './data';
-import { makePartGeometry } from './geometry';
+import { type Plan, type PartType, type PartItem } from '../lib/types';
+import { makeGeometry } from './hardware3d';
+import { getMachine, type MachineId, type Machine } from './catalog';
 
 export interface ViewerProps {
+  machineId: MachineId;
   mode: 'explore' | 'guide';
+  selected: string;
   explode: number;
   step: number;
-  selected: ComponentId;
   resetToken: number;
-  onSelect: (part: ComponentId) => void;
+  onSelect: (partId: string) => void;
   onError: (message: string) => void;
 }
 
-export default function Viewer({ mode, explode, step, selected, resetToken, onSelect, onError }: ViewerProps) {
-  const host = useRef<HTMLDivElement>(null);
-  const stageRef = useRef<Stage | null>(null);
-  const values = useRef({ mode, explode, step, selected, resetToken, onSelect, onError });
-  values.current = { mode, explode, step, selected, resetToken, onSelect, onError };
+function makePlan(machine: Machine): Plan {
+  const definitions:PartType[]=machine.assemblies.map((part,i)=>({
+    id:part.id,
+    label:String.fromCharCode(65+i),
+    name:part.label,
+    qty:1,
+    shape:'box',
+    size:part.size,
+    material:'metal',
+  }));
+  const items:PartItem[]=machine.assemblies.map(a=>({
+    key:a.id,ref:a.id,kind:'part',holes:[],
+    final:{pos:a.position,rot:[0,0,0]},
+    states:[{step:0,scene:'main',pos:a.position,rot:[0,0,0],delay:0}],
+  }));
+  return {
+    spec:{
+      name:machine.name,
+      variant:machine.sub,
+      category:'datacenter hardware',
+      archetype:'custom',
+      size:{w:machine.dimensions[0]/10,h:machine.dimensions[1]/10,d:machine.dimensions[2]/10},
+      minutes:1,people:2,difficulty:3,source:'guess',
+    },
+    parts:definitions,items,hardware:[],
+    steps:[{n:0,title:'Inspect hardware',kind:'general',people:2,pose:'+y',warnings:[],minutes:1,tools:[],scene:'main'}],
+    tools:[],
+  };
+}
 
-  useEffect(() => {
-    if (!stageRef.current) return;
-    const s = stageRef.current;
-    s.userAz = 0;
-    s.userEl = 0;
-    s.userZoom = 1;
-  }, [resetToken]);
+export default function Viewer(props: ViewerProps) {
+  const mountRef=useRef<HTMLDivElement>(null);
+  const cameraReset=useRef(0);
+  const live=useRef(props);
+  live.current=props;
 
-  useEffect(() => {
-    const mount = host.current;
-    if (!mount) return;
-    let s: Stage;
+  useEffect(()=>{
+    const mount=mountRef.current;
+    if(!mount)return;
+    const machine=getMachine(props.machineId);
+    let stage:Stage;
     try {
-      s = new Stage(mount, { offscreen: true });
-    } catch (e) {
-      values.current.onError('WebGL could not initialize in this browser.');
+      stage=new Stage(mount,{offscreen:true});
+    } catch(e) {
+      props.onError('WebGL could not initialize; check browser graphics acceleration.');
       console.error(e);
       return;
     }
-    stageRef.current = s;
-    s.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
-    s.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    s.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    s.renderer.toneMappingExposure = 1.18;
-    s.scene.add(new THREE.HemisphereLight('#ffffff', '#bdc7ce', 2.5));
-    const key = new THREE.DirectionalLight('#ffffff', 3.0);
-    key.position.set(-490, 1000, 610);
-    s.scene.add(key);
-    const fill = new THREE.DirectionalLight('#d4edff', 1.9);
-    fill.position.set(680, 430, -400);
-    s.scene.add(fill);
-    s.scene.add(new THREE.AmbientLight('#ffffff', .38));
-    s.setPlan(createPlan());
-    s.setMode({ kind: 'assembled' }, { instant: true });
-    s.autoReset = false;
-    s.shadow.visible = false;
-    if (!Array.isArray(s.shadow.material)) s.shadow.material.visible = false;
-    for (const node of s.parts) {
-      node.d.root.visible = false; // Keep Bygga's animation/camera infrastructure, replace its furniture mesh.
-      node.node.add(makePartGeometry(node.item.ref as ComponentId));
+
+    stage.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));
+    stage.renderer.outputColorSpace=THREE.SRGBColorSpace;
+    stage.renderer.toneMapping=THREE.ACESFilmicToneMapping;
+    stage.renderer.toneMappingExposure=1.27;
+    stage.scene.background=new THREE.Color('#eef1f1');
+    stage.scene.add(new THREE.HemisphereLight('#f9fbff','#82919a',2.5));
+    const sun=new THREE.DirectionalLight('#ffffff',3.25);
+    sun.position.set(-640,1260,530);stage.scene.add(sun);
+    const fill=new THREE.DirectionalLight('#d5eaff',1.75);
+    fill.position.set(590,370,-520);stage.scene.add(fill);
+    stage.scene.add(new THREE.AmbientLight('#ffffff',.38));
+    stage.setPlan(makePlan(machine));
+    stage.setMode({kind:'assembled'}, {instant:true});
+    stage.autoReset=false;
+    stage.shadow.visible=false;
+    if(!Array.isArray(stage.shadow.material))stage.shadow.material.visible=false;
+    for(const p of stage.parts){
+      p.d.root.visible=false;
+      try{p.node.add(makeGeometry(machine.id,p.item.ref));}
+      catch(e){console.error('Could not create '+p.item.ref,e);props.onError('Error building a hardware model.');}
     }
+    const selectedOutline=new THREE.BoxHelper(new THREE.Object3D(),0xf6a348);
+    selectedOutline.material.depthTest=false;
+    selectedOutline.material.transparent=true;
+    selectedOutline.material.opacity=.72;
+    selectedOutline.renderOrder=85;
+    selectedOutline.visible=false;
+    stage.scene.add(selectedOutline);
 
-    const selector = new THREE.BoxHelper(new THREE.Object3D(), 0xda853c);
-    selector.material.depthTest = false;
-    selector.material.transparent = true;
-    selector.material.opacity = .9;
-    selector.renderOrder = 55;
-    s.scene.add(selector);
-    const resize = () => s.resize(Math.max(1, mount.clientWidth), Math.max(1, mount.clientHeight));
-    const ro = new ResizeObserver(resize);
-    ro.observe(mount);
-    resize();
+    const size=()=>{
+      stage.resize(Math.max(1,mount.clientWidth),Math.max(1,mount.clientHeight));
+    };
+    const resize=new ResizeObserver(size);
+    resize.observe(mount);size();
 
-    const canvas = s.renderer.domElement;
-    canvas.setAttribute('aria-label', 'PowerEdge R760 3D model. Drag to rotate, wheel or pinch to zoom, click any part to inspect.');
-    canvas.style.touchAction = 'none';
-    canvas.style.cursor = 'grab';
-
-    const pointers = new Map<number, { x: number; y: number }>();
-    const ray = new THREE.Raycaster();
-    const point = new THREE.Vector2();
-    let down = { x: 0, y: 0, moved: 0 };
-    let pinchDistance = 0;
-    let pinchZoom = 1;
-    let zoom = 1;
-    let az = .53;
-    let el = .89;
-    const smooth = { zoom: 1, az: .53, el: .89 };
-    let previousReset = values.current.resetToken;
-
-    const pointerDown = (e: PointerEvent) => {
+    let az=machine.view.az,el=machine.view.el,zoom=1;
+    let smoothAz=az,smoothEl=el,smoothZoom=zoom;
+    let lastReset=props.resetToken;
+    const canvas=stage.renderer.domElement;
+    canvas.style.touchAction='none';
+    canvas.style.cursor='grab';
+    canvas.setAttribute('aria-label',machine.name+' 3D machine: drag to orbit, scroll to zoom, click hardware to inspect');
+    const pointerMap=new Map<number,{x:number;y:number}>();
+    let distance=0,pinchBase=0,pinchZoom=1;
+    const ray=new THREE.Raycaster();
+    const ndc=new THREE.Vector2();
+    const down=(e:PointerEvent)=>{
       canvas.setPointerCapture(e.pointerId);
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      down = { x: e.clientX, y: e.clientY, moved: 0 };
-      if (pointers.size === 2) {
-        const [a, b] = [...pointers.values()];
-        pinchDistance = Math.hypot(a.x-b.x, a.y-b.y);
-        pinchZoom = zoom;
+      pointerMap.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      distance=0;
+      if(pointerMap.size===2){
+        const [a,b]=[...pointerMap.values()];
+        pinchBase=Math.hypot(a.x-b.x,a.y-b.y);
+        pinchZoom=zoom;
       }
-      canvas.style.cursor = 'grabbing';
+      canvas.style.cursor='grabbing';
     };
-    const pointerMove = (e: PointerEvent) => {
-      const prev = pointers.get(e.pointerId);
-      if (!prev) return;
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      const dx = e.clientX-prev.x, dy=e.clientY-prev.y;
-      down.moved += Math.abs(dx) + Math.abs(dy);
-      if (pointers.size >= 2) {
-        const [a, b] = [...pointers.values()];
-        const distance = Math.hypot(a.x-b.x,a.y-b.y);
-        if (pinchDistance>10) zoom=THREE.MathUtils.clamp(pinchZoom*pinchDistance/distance,.65,2.6);
-      } else {
-        az -= dx*.007;
-        el = THREE.MathUtils.clamp(el+dy*.005,.24,1.43);
+    const move=(e:PointerEvent)=>{
+      const prev=pointerMap.get(e.pointerId);
+      if(!prev)return;
+      pointerMap.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      const dx=e.clientX-prev.x,dy=e.clientY-prev.y;
+      distance+=Math.abs(dx)+Math.abs(dy);
+      if(pointerMap.size>=2){
+        const [a,b]=[...pointerMap.values()];
+        const pd=Math.hypot(a.x-b.x,a.y-b.y);
+        if(pinchBase>1)zoom=THREE.MathUtils.clamp(pinchZoom*pd/pinchBase,.55,4.5);
+      }else{
+        az-=dx*.0067;
+        el=THREE.MathUtils.clamp(el+dy*.0051,-.13,1.53);
       }
     };
-    const pointerUp = (e: PointerEvent) => {
-      const wasClick=pointers.size===1 && down.moved<7 && e.type!=='pointercancel';
-      pointers.delete(e.pointerId);
-      if(wasClick){
+    const up=(e:PointerEvent)=>{
+      const click=pointerMap.size===1 && distance<7 && e.type==='pointerup';
+      pointerMap.delete(e.pointerId);
+      if(click){
         const rect=canvas.getBoundingClientRect();
-        point.set(((e.clientX-rect.left)/rect.width)*2-1,1-((e.clientY-rect.top)/rect.height)*2);
-        ray.setFromCamera(point,s.camera);
-        const intersections=ray.intersectObjects(s.root.children,true);
-        const hit=intersections.map(h=>h.object.userData.partId as ComponentId|undefined).find(Boolean);
-        if(hit)values.current.onSelect(hit);
+        ndc.set((e.clientX-rect.left)/rect.width*2-1,1-(e.clientY-rect.top)/rect.height*2);
+        ray.setFromCamera(ndc,stage.camera);
+        const hits=ray.intersectObjects(stage.root.children,true);
+        const target=hits.map(h=>h.object.userData.partId as string|undefined).find(Boolean);
+        if(target)live.current.onSelect(target);
       }
-      if(pointers.size<2)pinchDistance=0;
+      if(pointerMap.size<2)pinchBase=0;
       canvas.style.cursor='grab';
     };
-    const wheel = (e:WheelEvent) => {
+    const wheel=(e:WheelEvent)=>{
       e.preventDefault();
-      zoom=THREE.MathUtils.clamp(zoom*Math.exp(-e.deltaY*.0012),.65,2.6);
+      zoom=THREE.MathUtils.clamp(zoom*Math.exp(-e.deltaY*.00115),.55,4.5);
     };
-    const dblclick = () => { zoom=1;az=.53;el=.89; };
-    canvas.addEventListener('pointerdown',pointerDown);
-    canvas.addEventListener('pointermove',pointerMove);
-    canvas.addEventListener('pointerup',pointerUp);
-    canvas.addEventListener('pointercancel',pointerUp);
+    const dbl=()=>{az=machine.view.az;el=machine.view.el;zoom=1;};
+    canvas.addEventListener('pointerdown',down);
+    canvas.addEventListener('pointermove',move);
+    canvas.addEventListener('pointerup',up);
+    canvas.addEventListener('pointercancel',up);
     canvas.addEventListener('wheel',wheel,{passive:false});
-    canvas.addEventListener('dblclick',dblclick);
+    canvas.addEventListener('dblclick',dbl);
 
-    // Group transform is cached across frames so moving back and forth through the guide is fluid.
-    const displacement=new Map<ComponentId, number>(COMPONENTS.map(c=>[c.id,0]));
-    let raf=0, last=performance.now(), frame=0;
-    function tick(now:number){
-      raf=requestAnimationFrame(tick);
-      if(document.hidden){ last=now;return; }
-      const dt=Math.min(.065,(now-last)/1000);last=now;
-      const a=1-Math.exp(-dt*9.5);
-      const v=values.current;
-      if (v.resetToken !== previousReset) { az=.53; el=.89; zoom=1; previousReset=v.resetToken; }
-      const walkthrough=WALKTHROUGH[Math.min(v.step,WALKTHROUGH.length-1)];
-      const target=walkthrough.target;
-      smooth.az += (az-smooth.az)*(1-Math.exp(-dt*11));
-      smooth.el += (el-smooth.el)*(1-Math.exp(-dt*11));
-      smooth.zoom += (zoom-smooth.zoom)*(1-Math.exp(-dt*10));
-      s.tick(0);
-      // Bygga automatically positions the assembled parts; apply our detailed, per-component extraction.
-      for(const node of s.parts){
-        const id=node.item.ref as ComponentId;
-        const c=BY_ID[id];
-        const pre=walkthrough.remove.includes(id);
-        let dest=0;
-        let visible=true;
+    let last=performance.now(),raf=0;
+    let highlightTick=0;
+    const current=new Map<string,number>(machine.assemblies.map(p=>[p.id,0]));
+    const targetMap=new Map(machine.assemblies.map(p=>[p.id,p]));
+    const frame=(now:number)=>{
+      raf=requestAnimationFrame(frame);
+      if(document.hidden){last=now;return;}
+      const dt=Math.min(.05,(now-last)/1000);
+      last=now;
+      const fade=1-Math.exp(-dt*9);
+      const v=live.current;
+      if(v.resetToken!==lastReset){
+        az=machine.view.az;el=machine.view.el;zoom=1;
+        lastReset=v.resetToken;
+      }
+      smoothAz+=(az-smoothAz)*(1-Math.exp(-dt*11));
+      smoothEl+=(el-smoothEl)*(1-Math.exp(-dt*11));
+      smoothZoom+=(zoom-smoothZoom)*(1-Math.exp(-dt*11));
+      stage.tick(0);
+      const guide=machine.guide[Math.min(v.step,machine.guide.length-1)];
+      const selected=v.mode==='guide'?guide.focus:v.selected;
+      for(const node of stage.parts){
+        const a=targetMap.get(node.item.ref)!;
+        let target=0,visible=true;
         if(v.mode==='explore'){
-          dest=v.explode/100;
-          // The working top-down cutaway is open at rest: hidden lid/duct.
-          if((id==='cover'||id==='shroud'||id==='backplaneCover')&&dest<.06)visible=false;
+          target=v.explode/100;
+          if(a.absentAtRest&&target<.055)visible=false;
         }else{
-          if(pre){dest=1.65;visible=false;}
-          if(id===target && v.step>0){dest=1.0;}
-          // Show hidden subassembly if it is the target, even if other removable groups are absent.
+          if(guide.removed.includes(a.id)){target=1.5;visible=false;}
+          if(guide.focus===a.id&&v.step>0){target=1;}
+          if(a.absentAtRest&&v.step===0)visible=false;
         }
-        const x=displacement.get(id)||0;
-        const n=x+(dest-x)*a;
-        displacement.set(id,n);
+        // Rack context is kept visible instead of moving the cabinet with every tray.
+        if(machine.id==='gb200rack'&&a.id==='cabinet')target=0;
+        const old=current.get(a.id)||0;
+        const alpha=old+(target-old)*fade;
+        current.set(a.id,alpha);
+        node.node.position.set(
+          a.position[0]+a.extract[0]*alpha,
+          a.position[1]+a.extract[1]*alpha,
+          a.position[2]+a.extract[2]*alpha
+        );
         node.node.visible=visible;
-        // Force Bygga's furniture placeholder off and detailed server-specific mesh on.
-        node.node.position.set(c.position[0]+c.extraction[0]*n,c.position[1]+c.extraction[1]*n,c.position[2]+c.extraction[2]*n);
-        node.node.rotation.set(0,0,0);
+        node.node.quaternion.identity();
       }
-      // Large, physically proportioned rack chassis, with custom orbit for stable framing.
-      const bounds=(v.mode==='explore'?v.explode/100:Math.min(v.step/6,1));
-      const baseHalf=mount!.clientWidth<600?610:475;
-      const half=(baseHalf+bounds*133)/Math.max(.65,smooth.zoom);
-      const aspect=Math.max(.3,mount!.clientWidth/Math.max(mount!.clientHeight,1));
-      s.camera.left=-half*aspect;
-      s.camera.right=half*aspect;
-      s.camera.top=half;
-      s.camera.bottom=-half;
-      const direction=new THREE.Vector3(Math.sin(smooth.az)*Math.cos(smooth.el),Math.sin(smooth.el),Math.cos(smooth.az)*Math.cos(smooth.el));
-      const aim=new THREE.Vector3(0,42,0).add(s.root.position);
-      s.camera.position.copy(aim).addScaledVector(direction,1250);
-      s.camera.up.set(0,1,0);
-      s.camera.lookAt(aim);
-      s.camera.near=1;
-      s.camera.far=5000;
-      s.camera.updateProjectionMatrix();
-      s.camera.updateMatrixWorld();
-      s.shadow.visible=false;
-      const chosen= v.mode==='guide'?target:v.selected;
-      if(frame++%5===0) {
-        const part=s.parts.find(p=>p.item.ref===chosen);
-        if(part?.node.visible){
-          selector.setFromObject(part.node);
-          selector.visible=true;
-        } else selector.visible=false;
+      // Correct orthographic framing for 2U/6U/10U and for the entire rack.
+      const mobile=mount.clientWidth<650;
+      const baseHalf=machine.id==='r760'?490:machine.id==='xe9680'?645:machine.id==='dgxb200'?745:1250;
+      const level=v.mode==='explore'?v.explode/100:v.step/Math.max(machine.guide.length-1,1);
+      const additional=machine.id==='gb200rack'?level*290:level*205;
+      const half=(baseHalf+(mobile?(machine.id==='gb200rack'?190:120):0)+additional)/Math.max(.55,smoothZoom);
+      const aspect=Math.max(.4,mount.clientWidth/Math.max(1,mount.clientHeight));
+      stage.camera.left=-half*aspect;
+      stage.camera.right=half*aspect;
+      stage.camera.top=half;
+      stage.camera.bottom=-half;
+      const dir=new THREE.Vector3(
+        Math.sin(smoothAz)*Math.cos(smoothEl),
+        Math.sin(smoothEl),
+        Math.cos(smoothAz)*Math.cos(smoothEl)
+      );
+      const offsetY=machine.id==='gb200rack'?1070:machine.id==='dgxb200'?186:machine.id==='xe9680'?129:42;
+      const center=new THREE.Vector3(0,offsetY,0).add(stage.root.position);
+      stage.camera.position.copy(center).addScaledVector(dir,machine.view.distance);
+      stage.camera.up.set(0,1,0);
+      stage.camera.lookAt(center);
+      stage.camera.near=1;
+      stage.camera.far=10000;
+      stage.camera.updateProjectionMatrix();
+      stage.camera.updateMatrixWorld();
+      stage.shadow.visible=false;
+      if(++highlightTick%8===0){
+        const n=stage.parts.find(p=>p.item.ref===selected);
+        if(n?.node.visible){
+          selectedOutline.setFromObject(n.node);
+          selectedOutline.visible=true;
+        }else selectedOutline.visible=false;
       }
-      s.renderer.render(s.scene,s.camera);
-    }
-    raf=requestAnimationFrame(tick);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      ro.disconnect();
-      canvas.removeEventListener('pointerdown',pointerDown);
-      canvas.removeEventListener('pointermove',pointerMove);
-      canvas.removeEventListener('pointerup',pointerUp);
-      canvas.removeEventListener('pointercancel',pointerUp);
-      canvas.removeEventListener('wheel',wheel);
-      canvas.removeEventListener('dblclick',dblclick);
-      s.scene.remove(selector);
-      selector.geometry.dispose();
-      s.dispose();
-      stageRef.current=null;
+      stage.renderer.render(stage.scene,stage.camera);
     };
-  }, []);
+    raf=requestAnimationFrame(frame);
+    return ()=>{
+      cancelAnimationFrame(raf);
+      resize.disconnect();
+      canvas.removeEventListener('pointerdown',down);
+      canvas.removeEventListener('pointermove',move);
+      canvas.removeEventListener('pointerup',up);
+      canvas.removeEventListener('pointercancel',up);
+      canvas.removeEventListener('wheel',wheel);
+      canvas.removeEventListener('dblclick',dbl);
+      stage.scene.remove(selectedOutline);
+      selectedOutline.geometry.dispose();
+      stage.dispose();
+    };
+  },[props.machineId]);
 
-  return <div className='viewer' ref={host} data-testid='server-viewer' />;
+  return <div className='viewer' ref={mountRef} data-testid='hardware-viewer' />;
 }

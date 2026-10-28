@@ -1,90 +1,95 @@
 [
   {
-    "name": "Open an authentic looking R760 cutaway",
+    "name": "Switch between four unique server models",
     "sanity": true,
     "viewport": "desktop",
     "covers": [
-      "R760 server model",
-      "open chassis view",
-      "six fan cage",
-      "front drive carriers"
+      "four machine tabs",
+      "distinct server models",
+      "machine inspector context"
     ],
-    "description": "The initial live cutaway presents a full 2U rack server instead of a generic drive-like box.",
+    "description": "Tabs replace the current model and present physically distinct systems rather than renaming a common enclosure.",
     "steps": [
-      "Open the main page",
-      "Identify the PowerEdge R760 title and 3D model",
-      "Inspect the 3D model and locate front drive carriers, cooling fans, CPU heatsinks and rear risers"
+      "Open the site",
+      "Click XE9680",
+      "Verify eight H200 GPU packages in the 6U chassis",
+      "Click DGX B200",
+      "Verify a taller 10U Blackwell system",
+      "Click GB200 NVL72",
+      "Verify a full-height rack with stacked tray bays"
     ],
-    "expected": "A large interactive rack server is shown. The server has 16 front drive carriers, a row of six cooling fans, metallic dual CPU heatsinks, green motherboard and memory, rear expansion risers, and a metal chassis."
+    "expected": "All four tabs operate, each has a 3D model with different chassis proportions and hardware details, and its component inspector changes."
   },
   {
-    "name": "Inspect actual component groups",
+    "name": "Collapse the sidebar and restore it",
     "viewport": "desktop",
     "covers": [
-      "component index",
-      "part descriptions",
-      "component highlighting",
-      "official reference"
+      "sidebar collapse",
+      "unobstructed model viewport",
+      "sidebar restore"
     ],
-    "description": "Click component index items to understand real server hardware.",
+    "description": "Give the 3D machine all available space without leaving an empty right sidebar.",
     "steps": [
-      "In Explore mode click DDR5 memory in the component index",
-      "Observe the detail panel explanation",
-      "Click Dual Xeon PHMs",
-      "Use the Dell service manual link"
+      "Select GB200 NVL72",
+      "Click Hide sidebar",
+      "Observe the expanded rack viewport",
+      "Click Show sidebar"
     ],
-    "expected": "The detail panel updates to describe 32 DIMM positions, then two Xeon PHMs, and the Dell service manual link works."
+    "expected": "Sidebar disappears and 3D viewer fills the available width; the sidebar can be restored with details intact."
   },
   {
-    "name": "Follow the guided access path",
+    "name": "Enable fullscreen mode",
     "viewport": "desktop",
     "covers": [
-      "guided teardown",
-      "next and previous steps",
-      "step progress",
-      "service notes"
+      "browser fullscreen",
+      "exit fullscreen",
+      "fullscreen controls"
     ],
-    "description": "The step-by-step path walks through cover removal, air shroud, risers, fan cage, and CPU access.",
+    "description": "Native browser fullscreen should be available from the 3D viewer.",
     "steps": [
+      "Click Enter fullscreen",
+      "Observe the expanded viewer and active machine tabs",
+      "Click Exit fullscreen"
+    ],
+    "expected": "The experience expands using browser fullscreen when permitted, with tabs, rotate and other useful controls still accessible, and exits successfully."
+  },
+  {
+    "name": "Use exploded view and model-specific guided steps",
+    "viewport": "desktop",
+    "covers": [
+      "explode slider",
+      "guided disassembly",
+      "previous and next navigation",
+      "model-specific component focus"
+    ],
+    "description": "Four models each offer exploratory and guided decomposition rather than a static illustration.",
+    "steps": [
+      "Select DGX B200",
+      "Move the explode slider to 80%",
       "Click Step-by-step",
-      "Press Next to remove the system cover",
-      "Press Next to lift the air shroud",
-      "Advance through several subsequent steps using Next and Previous"
+      "Click Next step several times",
+      "Click Previous step",
+      "Select GB200 NVL72 and enter Step-by-step"
     ],
-    "expected": "The numbered progress advances through 13 distinct steps; each step gives a real component, grounded description, and relevant safety note; the 3D model changes."
+    "expected": "Components visibly separate and model-specific walkthrough steps change the assemblies and detail explanation; GB200 rack guide discusses compute trays, NVLink switches, coolant and power."
   },
   {
-    "name": "Disassemble and reassemble using slider",
+    "name": "Inspect hardware and access official references on mobile",
     "viewport": "mobile",
     "covers": [
-      "exploded slider",
-      "mobile controls",
-      "responsive layout",
-      "reset"
+      "mobile four-tab layout",
+      "clickable hardware index",
+      "sidebar collapse mobile",
+      "official documentation links"
     ],
-    "description": "A phone user can separate the server and return it to the open cutaway.",
+    "description": "All machine tabs and detail controls should work on a narrow screen.",
     "steps": [
-      "On mobile switch to Explore mode",
-      "Move Separate server components slider to 100%",
-      "Move it back to 0%",
-      "Tap Reset model"
+      "Open on 390px mobile viewport",
+      "Select XE9680 tab",
+      "Scroll to details and choose 8 NVIDIA H200 GPUs",
+      "Hide sidebar and then show it",
+      "Open Official hardware documentation link"
     ],
-    "expected": "The 3D components separate and reassemble, the percentage text updates, the slider remains usable and the mobile controls do not overflow."
-  },
-  {
-    "name": "Navigate component selection on mobile",
-    "viewport": "mobile",
-    "covers": [
-      "mobile component index",
-      "mobile inspector",
-      "accessible part selection"
-    ],
-    "description": "All hardware systems remain reachable and their information readable on small screens.",
-    "steps": [
-      "On mobile scroll the component row horizontally",
-      "Choose Drive backplane",
-      "Choose PCIe riser cages"
-    ],
-    "expected": "Component headings, descriptions and hardware details update correctly. The viewport and content remain readable."
+    "expected": "The machine tab row fits on mobile, viewer and inspector are usable, sidebar can be toggled and official vendor links are accessible."
   }
 ]

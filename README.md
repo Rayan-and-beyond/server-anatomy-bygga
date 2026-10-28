@@ -1,34 +1,38 @@
-# PowerEdge R760 — Server Anatomy
+# Datacenter Anatomy
 
-An interactive, independent **Dell PowerEdge R760** educational reconstruction. This is not a Dell-authored application and does not include Dell CAD or service-certified geometry.
+Interactive, browser-only 3D hardware studies of **four different datacenter machines**:
 
-## Why this server
+1. **Dell PowerEdge R760 — 2U**. Dual socket enterprise server with 32 DDR5 DIMM positions, 16 front drive carriers, 6 removable fans, PCIe risers and redundant PSUs.
+2. **Dell PowerEdge XE9680 — 6U**. Air-cooled HGX H200 platform: eight SXM5 H200 GPU modules, dual-Xeon host board, 32 DDR5 slots, six mid-tray HPR fans, ten rear fans, six redundant PSUs.
+3. **NVIDIA DGX B200 — 10U**. Eight B200 GPUs (1,440 GB HBM3e), two fifth-gen NVSwitch chips, dual Xeon 8570 CPUs, 32 DIMM positions, six 3.3-kW PSUs, NVMe cache and networking.
+4. **NVIDIA DGX GB200 NVL72 — rack-scale**. Liquid-cooled 72-GPU/36-Grace-CPU cabinet with eighteen 1RU compute trays, nine NVLink switch trays, two top-of-rack switches, power shelves, rear copper cable cartridges and liquid manifolds.
 
-R760: 2U (86.8 mm high), 434 mm enclosure body, 482 mm ears, 700.7 mm nominal depth, up to two Intel Xeon Scalable CPUs, **32 DDR5 DIMM slots** (16 per socket), six high-pressure fans, configurable drive backplanes (this study illustrates the **16 x 2.5-inch bay** option), PCIe Gen5 riser cages and redundant rear AC PSUs. The illustration depicts an air-cooled configuration. Actual cards, memory population, drive choices and service-specific cable routes vary.
+## Interaction
 
-## Main interactions
+Each machine has its own tab. Orbit and zoom hardware, select assemblies, separate components with a slider, or follow a machine-specific guided walkthrough. Hide the sidebar for unobstructed viewing. Activate native browser fullscreen (requires browser support and iframe permission when embedded). No user accounts, metered credits, APIs, server or AI generation.
 
-- **Explore:** Rotate and zoom the server, click individual assemblies, and slide from an open working cutaway to an exploded view.
-- **Step-by-step:** Thirteen stages presenting a coherent top-access teardown: exterior, cover, air shroud, PCIe risers, backplane cover, fan cage, PHM, DIMM positions, front drive carriers, backplane, controller, PSUs and system board. Separate service operations have their own prerequisites; this is a teaching sequence, **not** the official service order for every component.
-- Buttons, mouse/touch interactions, keyboard arrows for guide navigation, component index and descriptive inspector.
-- No AI, paid credits, API keys, tracking or backend.
+**Important**: These scenes are programmatically reconstructed educational models, not manufacturer CAD or certified service procedures. Real-world assembly/removal procedures can be significantly more complicated and require vendor-certified tools. Accelerator, drive, cable, fan and PSU options vary by configuration.
 
-## Primary references (accessed October 2026)
+## Architecture
 
-- [Dell official R760 inside-the-system component diagram](https://www.dell.com/support/manuals/en-us/poweredge-r760/per760_ism_pub/inside-the-system?guid=guid-043d9f52-a16e-4494-a65a-128c47fd4ea4&lang=en-us)
-- [Dell R760 chassis dimensions](https://www.dell.com/support/manuals/en-us/oth-r760/per760_ism_pub/chassis-dimensions?guid=guid-04578793-7445-43f5-acc4-a0b11f85eb5f&lang=en-us)
-- [Dell R760 official processor service 3D walkthrough](https://www.dell.com/support/resources/en-us/3dviewer/ic14000r760003901a/how-to-replace-the-processor-on-a-poweredge-r760)
-- [Dell official cooling fan cage service procedure](https://www.dell.com/support/resources/en-gb/3dviewer/ic14000r760000905a/how-to-replace-the-cooling-fan-cage-assembly-on-a-poweredge-r760)
-- [StorageReview R760 hands-on internal hardware photographs](https://www.storagereview.com/review/dell-poweredge-r760-review)
+- src/server/catalog.ts: platform-specific inventory, dimensions, extraction vectors, descriptions and guided sequence.
+- src/server/hardware3d.ts: procedural GPU/CPU modules, metalwork, fans, PCBs, DIMMs, cables, liquid manifolds and dense rack trays.
+- src/server/geometry.ts: original custom 2U geometry.
+- src/server/Viewer.tsx: Three.js viewer via adapted MIT-licensed Bygga Stage, camera/picking/interpolation.
+- src/App.tsx: machine tabs, collapsible inspector, fullscreen, exploder and guide.
+- src/engine/*, src/lib/types.ts, src/lib/plan/math.ts: MIT-licensed Bygga code, copyright retained in LICENSE.
 
-## Implementation
+## Official hardware references
 
-The original MIT-licensed Three.js Stage renderer, drawable materials and type interfaces are adapted from [Bygga](https://github.com/Nutlope/bygga), © 2026 Bygga contributors (see LICENSE). Unlike the original furniture/fastener geometry, src/server/geometry.ts procedurally generates server hardware while src/server/data.ts contains vendor-grounded component descriptions and illustrative educational disassembly stages. The model is not exact in PCB trace, heatsink pitch, port location, socket orientation, or manufacturer-specific assemblies.
+- Dell PowerEdge R760 inside-the-system: https://www.dell.com/support/manuals/en-us/poweredge-r760/per760_ism_pub/inside-the-system?guid=guid-043d9f52-a16e-4494-a65a-128c47fd4ea4&lang=en-us
+- Dell PowerEdge XE9680 components: https://www.dell.com/support/manuals/en-jm/poweredge-xe9680/xe9680_ism_pub/dell-poweredge-xe9680-system-configurations-and-features?guid=guid-219a12b6-5232-49fe-9506-ac2aed25ac30&lang=en-us
+- Dell XE9680 supported GPUs: https://www.dell.com/support/manuals/en-ai/poweredge-xe9680/xe9680_ism_pub/gpu-specifications?guid=guid-1f91b9fb-b8fd-492e-863f-45febc9355c6&lang=en-us
+- NVIDIA DGX B200: https://docs.nvidia.com/dgx/dgxb200-user-guide/introduction-to-dgxb200.html
+- NVIDIA DGX GB Rack Scale: https://docs.nvidia.com/dgx/dgxgb200-user-guide/hardware.html
+- NVIDIA GB200 NVL72 overview: https://developer.nvidia.com/blog/nvidia-gb200-nvl72-delivers-trillion-parameter-llm-training-and-real-time-inference/
 
-```bash
-npm install
-npm run build
-npm run dev
-```
+No actual vendor CAD or licensed source images are copied into the 3D models. Brand names remain their owners' trademarks.
 
-Mac M1 / Safari WebGL is supported in principle; performance should be verified on the target browser. No batteries or credentials required.
+## Local development
+
+Node.js 22+. Run npm install, then npm run dev. Verify with npm run build. Browser requires WebGL2; runs on Mac M1 with recent Safari subject to available memory.
