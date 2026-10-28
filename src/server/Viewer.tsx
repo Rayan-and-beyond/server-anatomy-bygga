@@ -184,7 +184,7 @@ export default function Viewer({ mode, explode, step, selected, resetToken, onSe
       }
       // Large, physically proportioned rack chassis, with custom orbit for stable framing.
       const bounds=(v.mode==='explore'?v.explode/100:Math.min(v.step/6,1));
-      const baseHalf=mount!.clientWidth<600?435:365;
+      const baseHalf=mount!.clientWidth<600?610:475;
       const half=(baseHalf+bounds*133)/Math.max(.65,smooth.zoom);
       const aspect=Math.max(.3,mount!.clientWidth/Math.max(mount!.clientHeight,1));
       s.camera.left=-half*aspect;
