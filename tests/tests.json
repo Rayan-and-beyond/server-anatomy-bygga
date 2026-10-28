@@ -1,66 +1,90 @@
 [
   {
-    "name": "Inspect a server component",
+    "name": "Open an authentic looking R760 cutaway",
     "sanity": true,
     "viewport": "desktop",
     "covers": [
-      "component index",
-      "part inspector",
-      "component selection"
+      "R760 server model",
+      "open chassis view",
+      "six fan cage",
+      "front drive carriers"
     ],
-    "description": "Selecting a hardware system updates its explainer and selection index.",
+    "description": "The initial live cutaway presents a full 2U rack server instead of a generic drive-like box.",
     "steps": [
-      "Open the server anatomy app",
-      "Click the Memory modules item in the Component Index",
-      "Read the Part Inspector"
+      "Open the main page",
+      "Identify the PowerEdge R760 title and 3D model",
+      "Inspect the 3D model and locate front drive carriers, cooling fans, CPU heatsinks and rear risers"
     ],
-    "expected": "Part Inspector displays Memory modules, its role and explanatory details, and the Memory modules index item is selected."
+    "expected": "A large interactive rack server is shown. The server has 16 front drive carriers, a row of six cooling fans, metallic dual CPU heatsinks, green motherboard and memory, rear expansion risers, and a metal chassis."
   },
   {
-    "name": "Adjust server decomposition",
+    "name": "Inspect actual component groups",
     "viewport": "desktop",
     "covers": [
-      "exploded view slider",
-      "animated component separation"
+      "component index",
+      "part descriptions",
+      "component highlighting",
+      "official reference"
     ],
-    "description": "The model should separate and reassemble in response to its range control.",
+    "description": "Click component index items to understand real server hardware.",
     "steps": [
-      "Locate the Decomposition slider at 43%",
-      "Move the slider to 100%",
-      "Move the slider to 0%"
+      "In Explore mode click DDR5 memory in the component index",
+      "Observe the detail panel explanation",
+      "Click Dual Xeon PHMs",
+      "Use the Dell service manual link"
     ],
-    "expected": "The percentage changes to 100% then 0%, and the 3D server parts move apart and reassemble."
+    "expected": "The detail panel updates to describe 32 DIMM positions, then two Xeon PHMs, and the Dell service manual link works."
   },
   {
-    "name": "Reset the model",
+    "name": "Follow the guided access path",
+    "viewport": "desktop",
+    "covers": [
+      "guided teardown",
+      "next and previous steps",
+      "step progress",
+      "service notes"
+    ],
+    "description": "The step-by-step path walks through cover removal, air shroud, risers, fan cage, and CPU access.",
+    "steps": [
+      "Click Step-by-step",
+      "Press Next to remove the system cover",
+      "Press Next to lift the air shroud",
+      "Advance through several subsequent steps using Next and Previous"
+    ],
+    "expected": "The numbered progress advances through 13 distinct steps; each step gives a real component, grounded description, and relevant safety note; the 3D model changes."
+  },
+  {
+    "name": "Disassemble and reassemble using slider",
     "viewport": "mobile",
     "covers": [
-      "view reset",
-      "selected component",
-      "mobile layout"
+      "exploded slider",
+      "mobile controls",
+      "responsive layout",
+      "reset"
     ],
-    "description": "Reset returns the prototype to a known usable starting state.",
+    "description": "A phone user can separate the server and return it to the open cutaway.",
     "steps": [
-      "On mobile select Power supplies from the horizontal index",
-      "Set the decomposition slider to 100%",
-      "Tap RESET"
+      "On mobile switch to Explore mode",
+      "Move Separate server components slider to 100%",
+      "Move it back to 0%",
+      "Tap Reset model"
     ],
-    "expected": "Selected part returns to Processors and decomposition returns to 43%; mobile layout remains usable."
+    "expected": "The 3D components separate and reassemble, the percentage text updates, the slider remains usable and the mobile controls do not overflow."
   },
   {
-    "name": "Read navigation help and browse components",
-    "viewport": "desktop",
+    "name": "Navigate component selection on mobile",
+    "viewport": "mobile",
     "covers": [
-      "help overlay",
-      "next and previous navigation",
-      "documentation link"
+      "mobile component index",
+      "mobile inspector",
+      "accessible part selection"
     ],
-    "description": "Navigation remains accessible without a login.",
+    "description": "All hardware systems remain reachable and their information readable on small screens.",
     "steps": [
-      "Click the help icon above the model",
-      "Read the instructions then close them",
-      "Click Next component in the inspector"
+      "On mobile scroll the component row horizontally",
+      "Choose Drive backplane",
+      "Choose PCIe riser cages"
     ],
-    "expected": "Instructions open and close; Next component updates the inspector to the following component."
+    "expected": "Component headings, descriptions and hardware details update correctly. The viewport and content remain readable."
   }
 ]

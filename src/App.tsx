@@ -1,120 +1,156 @@
-import { useState } from 'react';
-import { ArrowUpRight, Box, Check, ChevronLeft, ChevronRight, Cpu, Layers3, Maximize2, MousePointer2, RotateCcw, ScanSearch, SlidersHorizontal, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, ExternalLink, RotateCcw } from 'lucide-react';
 import Viewer from './server/Viewer';
-import { parts, partById, type ComponentId } from './server/data';
+import { BY_ID, COMPONENTS, REFERENCE_URLS, WALKTHROUGH, type ComponentId } from './server/data';
 
 export default function App() {
-  const [explode, setExplode] = useState(43);
-  const [selected, setSelected] = useState<ComponentId | null>('processors');
-  const [resetCount, setResetCount] = useState(0);
-  const [showHelp, setShowHelp] = useState(false);
-  const active = selected ? partById[selected] : null;
-  const activeIndex = Math.max(0, parts.findIndex(p => p.id === selected));
+  const [mode, setMode] = useState<'explore' | 'guide'>('explore');
+  const [selected, setSelected] = useState<ComponentId>('cpus');
+  const [step, setStep] = useState(0);
+  const [explode, setExplode] = useState(0);
+  const [resetToken, setResetToken] = useState(0);
+  const [error, setError] = useState('');
+  const detail = BY_ID[selected];
+  const current = WALKTHROUGH[step];
 
-  const stepSelection = (direction: number) => setSelected(parts[(activeIndex + direction + parts.length) % parts.length].id);
-  const reset = () => { setSelected('processors'); setExplode(43); setResetCount(x => x + 1); };
+  const selectPart = (id: ComponentId) => {
+    setSelected(id);
+    if (mode === 'guide') setMode('explore');
+  };
+  const navigate = (newStep: number) => {
+    const next = Math.max(0, Math.min(WALKTHROUGH.length - 1, newStep));
+    setStep(next);
+    setSelected(WALKTHROUGH[next].target);
+  };
+  const changeMode = (next: 'explore' | 'guide') => {
+    setMode(next);
+    if (next === 'guide') {
+      navigate(0);
+    } else {
+      setSelected('cpus');
+      setExplode(0);
+    }
+    setResetToken(x => x + 1);
+  };
+  const reset = () => {
+    setResetToken(x => x + 1);
+    if (mode === 'explore') setExplode(0);
+    else navigate(0);
+  };
 
-  return <main className='app-shell'>
-    <header className='topbar'>
-      <a className='brand' href='#top' aria-label='Server Anatomy home'>
-        <span className='brand-symbol'><Layers3 size={21} strokeWidth={1.8}/></span>
-        <span>FIELDNOTES <span className='brand-muted'>/ LAB</span></span>
-      </a>
-      <span className='top-center'>INTERACTIVE HARDWARE STUDY <span className='slash'>/</span> VOL. 001</span>
-      <a className='top-source' href='https://github.com/Nutlope/bygga' target='_blank' rel='noreferrer'>
-        POWERED BY BYGGA <ArrowUpRight size={15}/>
+  useEffect(() => {
+    const keys = (e: KeyboardEvent) => {
+      if (mode !== 'guide' || ['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (e.key === 'ArrowRight') navigate(step + 1);
+      if (e.key === 'ArrowLeft') navigate(step - 1);
+    };
+    window.addEventListener('keydown', keys);
+    return () => window.removeEventListener('keydown', keys);
+  }, [mode, step]);
+
+  return <div className='shell'>
+    <header className='header'>
+      <div className='identity'>
+        <span className='identity-icon' aria-hidden='true'><span/><span/><span/></span>
+        <div className='identity-text'>
+          <strong>PowerEdge R760</strong>
+          <span>Inside a datacenter server</span>
+        </div>
+      </div>
+      <a className='official-link' href={REFERENCE_URLS.manual} target='_blank' rel='noreferrer'>
+        Dell service manual <ExternalLink size={15} aria-hidden='true'/>
       </a>
     </header>
-
-    <section className='intro' id='top'>
-      <div className='intro-label'><span className='pulse'/> SYSTEM STUDY / 001</div>
-      <div className='intro-content'>
-        <div>
-          <h1>Inside the <em>server.</em></h1>
-          <p>Take a machine apart. Understand what makes it work.</p>
-        </div>
-        <div className='intro-fact'><strong>9</strong><span>COMPONENT SYSTEMS<br/>ONE COMPLETE MACHINE</span></div>
-      </div>
-    </section>
-
-    <div className='workspace'>
-      <aside className='left-panel'>
-        <div className='panel-heading'><span>01 <span className='heading-dash'>/</span> COMPONENT INDEX</span><span>{parts.length.toString().padStart(2, '0')}</span></div>
-        <p className='panel-hint'>Select a part to inspect its role in the system.</p>
-        <nav aria-label='Server components' className='parts-nav'>
-          {parts.map((part, index) => <button key={part.id}
-            className={'part-row ' + (selected === part.id ? 'active' : '')}
-            onClick={() => setSelected(part.id)}
-            aria-pressed={selected === part.id}
-            data-testid={'component-' + part.id}>
-            <span className='part-index'>{part.number}</span>
-            <span className='part-title'>{part.name}</span>
-            <span className='part-indicator'>{selected === part.id ? <span className='part-arrow'>↗</span> : <span className='part-dot'/>}</span>
-          </button>)}
-        </nav>
-        <div className='sidebar-note'>
-          <div className='sidebar-note-icon'><MousePointer2 size={17}/></div>
-          <div><strong>Made to explore.</strong><br/><span>Rotate, separate, and inspect every subsystem.</span></div>
-        </div>
-      </aside>
-
-      <section className='stage-panel' aria-label='3D server interactive diagram'>
-        <div className='stage-toolbar'>
-          <div className='stage-chip'><span className='online-dot'/> LIVE MODEL <span className='chip-line'>/</span> 2U RACK SERVER</div>
-          <button className='icon-button' aria-label='How to control the 3D model' onClick={() => setShowHelp(v => !v)}><ScanSearch size={18}/></button>
-        </div>
-        <Viewer selected={selected} explode={explode} resetCount={resetCount} onPick={setSelected}/>
-        <div className='stage-coordinates' aria-hidden='true'><span>VIEWPORT 01</span><span>ORTHOGRAPHIC / 3D</span></div>
-        {showHelp && <div className='help-dialog'>
-          <button aria-label='Close instructions' className='help-close' onClick={() => setShowHelp(false)}><X size={16}/></button>
-          <strong>Navigate the model</strong>
-          <p>Drag to rotate · Scroll to zoom · Click a component to inspect it. On touch devices, drag with one finger. Use the decomposition slider to spread the components apart.</p>
-        </div>}
-        <div className='stage-bottom'>
-          <div className='mode-label'><SlidersHorizontal size={16}/> DECOMPOSITION</div>
-          <div className='decomposition'>
-            <div className='slider-top'><span>ASSEMBLED</span><span className='slider-percent'>{Math.round(explode)}%</span><span>EXPLODED</span></div>
-            <input aria-label='Explode server components' data-testid='explode-slider' type='range' min='0' max='100' value={explode} onChange={e => setExplode(Number(e.target.value))} style={{ '--progress': explode + '%' } as React.CSSProperties}/>
-            <div className='slider-stops' aria-hidden='true'><span/><span/><span/><span/><span/><span/><span/><span/><span/><span/><span/></div>
+    <div className='experience'>
+      <section className='model-area' aria-label='Interactive 3D server and disassembly controls'>
+        <div className='view-controls'>
+          <div className='switcher' role='group' aria-label='Exploration mode'>
+            <button className={mode==='explore'?'current':''} aria-pressed={mode==='explore'} onClick={()=>changeMode('explore')}>Explore</button>
+            <button className={mode==='guide'?'current':''} aria-pressed={mode==='guide'} onClick={()=>changeMode('guide')}>Step-by-step</button>
           </div>
-          <button className='reset-button' aria-label='Reset the model view' onClick={reset}><RotateCcw size={18}/> <span>RESET</span></button>
+          <button onClick={reset} className='reset-control' title='Reset camera and controls' aria-label='Reset model'>
+            <RotateCcw size={17}/><span>Reset</span>
+          </button>
+        </div>
+        <Viewer
+          mode={mode} explode={explode} step={step} selected={selected}
+          resetToken={resetToken} onSelect={selectPart} onError={setError}
+        />
+        {error && <div className='viewer-error' role='alert'>{error}</div>}
+        <div className='interaction-hint'>Drag to rotate <span>·</span> Scroll to zoom <span>·</span> Click a part</div>
+        <div className='bottom-control'>
+          {mode==='explore' ? <>
+            <div className='range-line'>
+              <span>Assembled</span><span>{explode}% separated</span>
+            </div>
+            <input
+              data-testid='explode-slider'
+              type='range' min='0' max='100' step='1'
+              value={explode}
+              aria-label='Separate server components'
+              style={{ '--fill': explode + '%' } as React.CSSProperties}
+              onChange={e=>setExplode(Number(e.currentTarget.value))}
+            />
+          </> : <>
+            <div className='step-controls'>
+              <button className='step-back' aria-label='Previous step' onClick={()=>navigate(step-1)} disabled={step===0}><ArrowLeft size={20}/></button>
+              <span className='step-count'>{step+1} <span>/</span> {WALKTHROUGH.length}</span>
+              <div className='step-progress' aria-hidden='true'>
+                {WALKTHROUGH.map((s,i)=><span key={s.target+i} className={i<=step?'done':''}/>)}
+              </div>
+              <button className='step-next' aria-label='Next step' onClick={()=>navigate(step+1)} disabled={step===WALKTHROUGH.length-1}>
+                {step===WALKTHROUGH.length-1?'Finished':'Next'} <ArrowRight size={18}/>
+              </button>
+            </div>
+          </>}
         </div>
       </section>
 
-      <aside className='right-panel'>
-        <div className='panel-heading'><span>02 <span className='heading-dash'>/</span> PART INSPECTOR</span><span><Cpu size={17}/></span></div>
-        {active ? <div className='inspector' key={active.id}>
-          <div className='part-badge'>SELECTED COMPONENT <span>{active.number} / 09</span></div>
-          <div className='component-art'>
-            <div className='component-art-grid'/>
-            <div className='component-art-mark' style={{ borderColor: active.accent }}>
-              <Box size={48} strokeWidth={0.95} color={active.accent}/>
+      <aside className='detail-panel'>
+        {mode==='guide'? <>
+          <div className='detail-content'>
+            <div className='step-counter'>Step {String(step+1).padStart(2,'0')} of {WALKTHROUGH.length}</div>
+            <h1>{current.title}</h1>
+            <p className='description'>{current.description}</p>
+            <div className='technical-note'>{current.note}</div>
+          </div>
+          <nav className='index' aria-label='Guided server disassembly steps'>
+            <div className='index-title'>Disassembly path</div>
+            <div className='index-scroll'>
+              {WALKTHROUGH.map((s,i)=><button
+                key={s.title}
+                className={'index-item '+(step===i?'active':'')+(step>i?' done':'')}
+                aria-current={step===i?'step':undefined}
+                onClick={()=>navigate(i)}>
+                <span className='row-n'>{String(i+1).padStart(2,'0')}</span>
+                <span>{s.title}</span>
+              </button>)}
             </div>
-            <span className='art-corner'>FIG {active.number}</span>
+          </nav>
+        </> : <>
+          <div className='detail-content'>
+            <div className='step-counter'>Component {String(COMPONENTS.findIndex(p=>p.id===selected)+1).padStart(2,'0')} / {COMPONENTS.length}</div>
+            <h1>{detail.name}</h1>
+            <p className='subtitle'>{detail.role}</p>
+            <p className='description'>{detail.description}</p>
+            <div className='technical-note'>{detail.hardware}</div>
           </div>
-          <div className='inspector-type'>{active.function.toUpperCase()}</div>
-          <h2>{active.name}</h2>
-          <p className='inspector-subtitle'>{active.subtitle}</p>
-          <div className='inspector-divider'/>
-          <div className='inspector-heading'>THE ROLE</div>
-          <p className='inspector-copy'>{active.description}</p>
-          <div className='inspector-heading'>GOOD TO KNOW</div>
-          <p className='inspector-detail'>{active.detail}</p>
-        </div> : <div className='inspector empty'><h2>Choose a component</h2><p>Click a part of the 3D model to learn more about it.</p></div>}
-        <div className='inspector-bottom'>
-          <div className='navigator-label'>EXPLORE COMPONENTS</div>
-          <div className='navigator'>
-            <button aria-label='Previous component' onClick={() => stepSelection(-1)}><ChevronLeft size={19}/></button>
-            <span>{String(activeIndex + 1).padStart(2, '0')} <span className='nav-separator'>/</span> {String(parts.length).padStart(2, '0')}</span>
-            <button aria-label='Next component' onClick={() => stepSelection(1)}><ChevronRight size={19}/></button>
-          </div>
-        </div>
+          <nav className='index' aria-label='Inspect hardware components'>
+            <div className='index-title'>Inside this server</div>
+            <div className='index-scroll'>
+              {COMPONENTS.map((c,i)=><button
+                key={c.id}
+                className={'index-item '+(selected===c.id?'active':'')}
+                aria-pressed={selected===c.id}
+                onClick={()=>selectPart(c.id)}>
+                <span className='row-n'>{String(i+1).padStart(2,'0')}</span>
+                <span>{c.name}</span>
+              </button>)}
+            </div>
+          </nav>
+        </>}
+        <div className='source-note'>Illustrated from Dell R760 documentation. Component placement is a close educational reconstruction, not OEM CAD or a repair procedure. <a href={REFERENCE_URLS.walkthrough} target='_blank' rel='noreferrer'>Dell’s official service walkthrough <ExternalLink size={12}/></a></div>
       </aside>
     </div>
-
-    <footer className='footer'>
-      <div><span className='footer-check'><Check size={13}/></span> INTERACTIVE LEARNING PROTOTYPE <span className='footer-divider'>·</span> CONCEPTUAL HARDWARE, NOT A REPAIR GUIDE</div>
-      <div>THREE.JS <span className='footer-divider'>×</span> BYGGA MIT ENGINE <span className='footer-divider'>·</span> <a href='https://github.com/Nutlope/bygga' target='_blank' rel='noreferrer'>VIEW SOURCE <ArrowUpRight size={12}/></a></div>
-    </footer>
-  </main>;
+  </div>;
 }

@@ -1,178 +1,233 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Stage } from '../engine/stage';
-import { createServerPlan, parts, type ComponentId } from './data';
+import { BY_ID, COMPONENTS, WALKTHROUGH, createPlan, type ComponentId } from './data';
 import { makePartGeometry } from './geometry';
 
-interface ViewerProps {
+export interface ViewerProps {
+  mode: 'explore' | 'guide';
   explode: number;
-  selected: ComponentId | null;
-  onPick: (id: ComponentId) => void;
-  resetCount: number;
+  step: number;
+  selected: ComponentId;
+  resetToken: number;
+  onSelect: (part: ComponentId) => void;
+  onError: (message: string) => void;
 }
 
-export default function Viewer({ explode, selected, onPick, resetCount }: ViewerProps) {
-  const hostRef = useRef<HTMLDivElement>(null);
+export default function Viewer({ mode, explode, step, selected, resetToken, onSelect, onError }: ViewerProps) {
+  const host = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Stage | null>(null);
-  const explodeRef = useRef(explode);
-  const selectionRef = useRef(selected);
-  const pickRef = useRef(onPick);
-  const progressRef = useRef(0.38);
-  const zoomRef = useRef(1.28);
-  explodeRef.current = explode;
-  selectionRef.current = selected;
-  pickRef.current = onPick;
+  const values = useRef({ mode, explode, step, selected, resetToken, onSelect, onError });
+  values.current = { mode, explode, step, selected, resetToken, onSelect, onError };
 
   useEffect(() => {
-    const stage = stageRef.current;
-    if (!stage) return;
-    stage.userAz = 0;
-    stage.userEl = 0;
-    zoomRef.current = 1.28;
-    stage.autoReset = false;
-  }, [resetCount]);
+    if (!stageRef.current) return;
+    const s = stageRef.current;
+    s.userAz = 0;
+    s.userEl = 0;
+    s.userZoom = 1;
+  }, [resetToken]);
 
   useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    let stage: Stage;
+    const mount = host.current;
+    if (!mount) return;
+    let s: Stage;
     try {
-      stage = new Stage(host, { offscreen: true, interactive: false });
-    } catch (error) {
-      host.dataset.error = 'WebGL could not initialize';
-      console.error('Unable to initialize 3D viewer', error);
+      s = new Stage(mount, { offscreen: true });
+    } catch (e) {
+      values.current.onError('WebGL could not initialize in this browser.');
+      console.error(e);
       return;
     }
-    stageRef.current = stage;
-    stage.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    stage.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    stage.renderer.toneMappingExposure = 1.55;
-    stage.scene.add(new THREE.HemisphereLight(0xffffff, 0xe4e9ef, 3.7));
-    const light = new THREE.DirectionalLight(0xffffff, 3.3);
-    light.position.set(-300, 640, 380);
-    stage.scene.add(light);
-    const backLight = new THREE.DirectionalLight(0xd9ecff, 1.5);
-    backLight.position.set(280, 270, -500);
-    stage.scene.add(backLight);
-    stage.setPlan(createServerPlan());
-    stage.setMode({ kind: 'assembled', view: { az: 0.64, el: 0.46 } }, { instant: true });
-    stage.autoReset = false;
-    stage.shadow.visible = false;
-    for (const p of stage.parts) {
-      const info = parts.find(item => item.id === p.item.ref);
-      if (!info) continue;
-      p.d.root.visible = false;
-      p.node.add(makePartGeometry(info.id));
+    stageRef.current = s;
+    s.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
+    s.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    s.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    s.renderer.toneMappingExposure = 1.18;
+    s.scene.add(new THREE.HemisphereLight('#ffffff', '#bdc7ce', 2.5));
+    const key = new THREE.DirectionalLight('#ffffff', 3.0);
+    key.position.set(-490, 1000, 610);
+    s.scene.add(key);
+    const fill = new THREE.DirectionalLight('#d4edff', 1.9);
+    fill.position.set(680, 430, -400);
+    s.scene.add(fill);
+    s.scene.add(new THREE.AmbientLight('#ffffff', .38));
+    s.setPlan(createPlan());
+    s.setMode({ kind: 'assembled' }, { instant: true });
+    s.autoReset = false;
+    s.shadow.visible = false;
+    if (!Array.isArray(s.shadow.material)) s.shadow.material.visible = false;
+    for (const node of s.parts) {
+      node.d.root.visible = false; // Keep Bygga's animation/camera infrastructure, replace its furniture mesh.
+      node.node.add(makePartGeometry(node.item.ref as ComponentId));
     }
 
-    const selectionBox = new THREE.BoxHelper(stage.root, 0xcb8051);
-    selectionBox.material.depthTest = false;
-    selectionBox.renderOrder = 9;
-    stage.scene.add(selectionBox);
-    selectionBox.visible = false;
-    const ray = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-
-    const resize = () => stage.resize(Math.max(1, host.clientWidth), Math.max(1, host.clientHeight));
-    const observer = new ResizeObserver(resize);
-    observer.observe(host);
+    const selector = new THREE.BoxHelper(new THREE.Object3D(), 0xda853c);
+    selector.material.depthTest = false;
+    selector.material.transparent = true;
+    selector.material.opacity = .9;
+    selector.renderOrder = 55;
+    s.scene.add(selector);
+    const resize = () => s.resize(Math.max(1, mount.clientWidth), Math.max(1, mount.clientHeight));
+    const ro = new ResizeObserver(resize);
+    ro.observe(mount);
     resize();
 
-    const canvas = stage.renderer.domElement;
+    const canvas = s.renderer.domElement;
+    canvas.setAttribute('aria-label', 'PowerEdge R760 3D model. Drag to rotate, wheel or pinch to zoom, click any part to inspect.');
     canvas.style.touchAction = 'none';
-    canvas.setAttribute('aria-label', 'Interactive 3D rack server. Drag to orbit, scroll to zoom, click a component to inspect.');
-    const down = { x: 0, y: 0, active: false, distance: 0 };
-    const pointerDown = (event: PointerEvent) => {
-      canvas.setPointerCapture(event.pointerId);
-      down.x = event.clientX;
-      down.y = event.clientY;
-      down.distance = 0;
-      down.active = true;
+    canvas.style.cursor = 'grab';
+
+    const pointers = new Map<number, { x: number; y: number }>();
+    const ray = new THREE.Raycaster();
+    const point = new THREE.Vector2();
+    let down = { x: 0, y: 0, moved: 0 };
+    let pinchDistance = 0;
+    let pinchZoom = 1;
+    let zoom = 1;
+    let az = .53;
+    let el = .89;
+    const smooth = { zoom: 1, az: .53, el: .89 };
+    let previousReset = values.current.resetToken;
+
+    const pointerDown = (e: PointerEvent) => {
+      canvas.setPointerCapture(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      down = { x: e.clientX, y: e.clientY, moved: 0 };
+      if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        pinchDistance = Math.hypot(a.x-b.x, a.y-b.y);
+        pinchZoom = zoom;
+      }
       canvas.style.cursor = 'grabbing';
     };
-    const pointerMove = (event: PointerEvent) => {
-      if (!down.active) return;
-      const dx = event.clientX - down.x;
-      const dy = event.clientY - down.y;
-      down.x = event.clientX;
-      down.y = event.clientY;
-      down.distance += Math.abs(dx) + Math.abs(dy);
-      stage.userAz -= dx * 0.0075;
-      stage.userEl = THREE.MathUtils.clamp(stage.userEl + dy * 0.006, -0.38, 0.84);
-    };
-    const pointerUp = (event: PointerEvent) => {
-      if (down.active && down.distance < 8) {
-        const rect = canvas.getBoundingClientRect();
-        pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
-        ray.setFromCamera(pointer, stage.camera);
-        const hits = ray.intersectObjects(stage.root.children, true);
-        const id = hits.map(hit => hit.object.userData.partId as ComponentId | undefined).find(Boolean);
-        if (id) pickRef.current(id);
-      }
-      down.active = false;
-      canvas.style.cursor = 'grab';
-    };
-    const wheel = (event: WheelEvent) => {
-      event.preventDefault();
-      zoomRef.current = THREE.MathUtils.clamp(zoomRef.current * Math.exp(event.deltaY * 0.0011), 0.75, 2.4);
-    };
-    canvas.addEventListener('pointerdown', pointerDown);
-    canvas.addEventListener('pointermove', pointerMove);
-    canvas.addEventListener('pointerup', pointerUp);
-    canvas.addEventListener('pointercancel', pointerUp);
-    canvas.addEventListener('wheel', wheel, { passive: false });
-
-    let raf = 0;
-    let last = performance.now();
-    const animate = (now: number) => {
-      raf = requestAnimationFrame(animate);
-      if (document.hidden) return;
-      const dt = Math.min(0.064, (now - last) / 1000);
-      last = now;
-      progressRef.current += (explodeRef.current / 100 - progressRef.current) * (1 - Math.exp(-dt * 7.7));
-      stage.userZoom = zoomRef.current * (1 + progressRef.current * 0.48);
-      stage.tick(0);
-      for (const pn of stage.parts) {
-        const info = parts.find(part => part.id === pn.item.ref);
-        if (!info) continue;
-        pn.node.position.set(
-          info.position[0] + info.explode[0] * progressRef.current,
-          info.position[1] + info.explode[1] * progressRef.current,
-          info.position[2] + info.explode[2] * progressRef.current,
-        );
-      }
-      const id = selectionRef.current;
-      if (id) {
-        const part = stage.parts.find(item => item.item.ref === id);
-        if (part) {
-          selectionBox.setFromObject(part.node);
-          selectionBox.visible = true;
-        }
+    const pointerMove = (e: PointerEvent) => {
+      const prev = pointers.get(e.pointerId);
+      if (!prev) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const dx = e.clientX-prev.x, dy=e.clientY-prev.y;
+      down.moved += Math.abs(dx) + Math.abs(dy);
+      if (pointers.size >= 2) {
+        const [a, b] = [...pointers.values()];
+        const distance = Math.hypot(a.x-b.x,a.y-b.y);
+        if (pinchDistance>10) zoom=THREE.MathUtils.clamp(pinchZoom*pinchDistance/distance,.65,2.6);
       } else {
-        selectionBox.visible = false;
+        az -= dx*.007;
+        el = THREE.MathUtils.clamp(el+dy*.005,.24,1.43);
       }
-      stage.render();
     };
-    raf = requestAnimationFrame(animate);
+    const pointerUp = (e: PointerEvent) => {
+      const wasClick=pointers.size===1 && down.moved<7 && e.type!=='pointercancel';
+      pointers.delete(e.pointerId);
+      if(wasClick){
+        const rect=canvas.getBoundingClientRect();
+        point.set(((e.clientX-rect.left)/rect.width)*2-1,1-((e.clientY-rect.top)/rect.height)*2);
+        ray.setFromCamera(point,s.camera);
+        const intersections=ray.intersectObjects(s.root.children,true);
+        const hit=intersections.map(h=>h.object.userData.partId as ComponentId|undefined).find(Boolean);
+        if(hit)values.current.onSelect(hit);
+      }
+      if(pointers.size<2)pinchDistance=0;
+      canvas.style.cursor='grab';
+    };
+    const wheel = (e:WheelEvent) => {
+      e.preventDefault();
+      zoom=THREE.MathUtils.clamp(zoom*Math.exp(-e.deltaY*.0012),.65,2.6);
+    };
+    const dblclick = () => { zoom=1;az=.53;el=.89; };
+    canvas.addEventListener('pointerdown',pointerDown);
+    canvas.addEventListener('pointermove',pointerMove);
+    canvas.addEventListener('pointerup',pointerUp);
+    canvas.addEventListener('pointercancel',pointerUp);
+    canvas.addEventListener('wheel',wheel,{passive:false});
+    canvas.addEventListener('dblclick',dblclick);
+
+    // Group transform is cached across frames so moving back and forth through the guide is fluid.
+    const displacement=new Map<ComponentId, number>(COMPONENTS.map(c=>[c.id,0]));
+    let raf=0, last=performance.now(), frame=0;
+    function tick(now:number){
+      raf=requestAnimationFrame(tick);
+      if(document.hidden){ last=now;return; }
+      const dt=Math.min(.065,(now-last)/1000);last=now;
+      const a=1-Math.exp(-dt*9.5);
+      const v=values.current;
+      if (v.resetToken !== previousReset) { az=.53; el=.89; zoom=1; previousReset=v.resetToken; }
+      const walkthrough=WALKTHROUGH[Math.min(v.step,WALKTHROUGH.length-1)];
+      const target=walkthrough.target;
+      smooth.az += (az-smooth.az)*(1-Math.exp(-dt*11));
+      smooth.el += (el-smooth.el)*(1-Math.exp(-dt*11));
+      smooth.zoom += (zoom-smooth.zoom)*(1-Math.exp(-dt*10));
+      s.tick(0);
+      // Bygga automatically positions the assembled parts; apply our detailed, per-component extraction.
+      for(const node of s.parts){
+        const id=node.item.ref as ComponentId;
+        const c=BY_ID[id];
+        const pre=walkthrough.remove.includes(id);
+        let dest=0;
+        let visible=true;
+        if(v.mode==='explore'){
+          dest=v.explode/100;
+          // The working top-down cutaway is open at rest: hidden lid/duct.
+          if((id==='cover'||id==='shroud'||id==='backplaneCover')&&dest<.06)visible=false;
+        }else{
+          if(pre){dest=1.65;visible=false;}
+          if(id===target && v.step>0){dest=1.0;}
+          // Show hidden subassembly if it is the target, even if other removable groups are absent.
+        }
+        const x=displacement.get(id)||0;
+        const n=x+(dest-x)*a;
+        displacement.set(id,n);
+        node.node.visible=visible;
+        // Force Bygga's furniture placeholder off and detailed server-specific mesh on.
+        node.node.position.set(c.position[0]+c.extraction[0]*n,c.position[1]+c.extraction[1]*n,c.position[2]+c.extraction[2]*n);
+        node.node.rotation.set(0,0,0);
+      }
+      // Large, physically proportioned rack chassis, with custom orbit for stable framing.
+      const bounds=(v.mode==='explore'?v.explode/100:Math.min(v.step/6,1));
+      const baseHalf=mount!.clientWidth<600?435:365;
+      const half=(baseHalf+bounds*133)/Math.max(.65,smooth.zoom);
+      const aspect=Math.max(.3,mount!.clientWidth/Math.max(mount!.clientHeight,1));
+      s.camera.left=-half*aspect;
+      s.camera.right=half*aspect;
+      s.camera.top=half;
+      s.camera.bottom=-half;
+      const direction=new THREE.Vector3(Math.sin(smooth.az)*Math.cos(smooth.el),Math.sin(smooth.el),Math.cos(smooth.az)*Math.cos(smooth.el));
+      const aim=new THREE.Vector3(0,42,0).add(s.root.position);
+      s.camera.position.copy(aim).addScaledVector(direction,1250);
+      s.camera.up.set(0,1,0);
+      s.camera.lookAt(aim);
+      s.camera.near=1;
+      s.camera.far=5000;
+      s.camera.updateProjectionMatrix();
+      s.camera.updateMatrixWorld();
+      s.shadow.visible=false;
+      const chosen= v.mode==='guide'?target:v.selected;
+      if(frame++%5===0) {
+        const part=s.parts.find(p=>p.item.ref===chosen);
+        if(part?.node.visible){
+          selector.setFromObject(part.node);
+          selector.visible=true;
+        } else selector.visible=false;
+      }
+      s.renderer.render(s.scene,s.camera);
+    }
+    raf=requestAnimationFrame(tick);
 
     return () => {
       cancelAnimationFrame(raf);
-      observer.disconnect();
-      canvas.removeEventListener('pointerdown', pointerDown);
-      canvas.removeEventListener('pointermove', pointerMove);
-      canvas.removeEventListener('pointerup', pointerUp);
-      canvas.removeEventListener('pointercancel', pointerUp);
-      canvas.removeEventListener('wheel', wheel);
-      selectionBox.geometry.dispose();
-      stage.scene.remove(selectionBox);
-      stage.dispose();
-      stageRef.current = null;
+      ro.disconnect();
+      canvas.removeEventListener('pointerdown',pointerDown);
+      canvas.removeEventListener('pointermove',pointerMove);
+      canvas.removeEventListener('pointerup',pointerUp);
+      canvas.removeEventListener('pointercancel',pointerUp);
+      canvas.removeEventListener('wheel',wheel);
+      canvas.removeEventListener('dblclick',dblclick);
+      s.scene.remove(selector);
+      selector.geometry.dispose();
+      s.dispose();
+      stageRef.current=null;
     };
   }, []);
 
-  return <div className='viewer' ref={hostRef} data-testid='server-viewer'>
-    <div className='stage-error'>Your browser could not start WebGL. Please enable hardware acceleration and reload.</div>
-    <div className='canvas-corner corner-tl' /><div className='canvas-corner corner-tr' />
-    <div className='canvas-corner corner-bl' /><div className='canvas-corner corner-br' />
-  </div>;
+  return <div className='viewer' ref={host} data-testid='server-viewer' />;
 }
