@@ -210,7 +210,7 @@ export default function Viewer(props: ViewerProps) {
       }
       // Correct orthographic framing for 2U/6U/10U and for the entire rack.
       const mobile=mount.clientWidth<650;
-      const baseHalf=machine.id==='r760'?490:machine.id==='xe9680'?645:machine.id==='dgxb200'?745:1250;
+      const baseHalf=machine.id==='r760'?490:machine.id==='xe9680'?645:machine.id==='dgxb200'?745:1370;
       const level=v.mode==='explore'?v.explode/100:v.step/Math.max(machine.guide.length-1,1);
       const additional=machine.id==='gb200rack'?level*290:level*205;
       const half=(baseHalf+(mobile?(machine.id==='gb200rack'?190:120):0)+additional)/Math.max(.55,smoothZoom);
@@ -236,7 +236,8 @@ export default function Viewer(props: ViewerProps) {
       stage.shadow.visible=false;
       if(++highlightTick%8===0){
         const n=stage.parts.find(p=>p.item.ref===selected);
-        if(n?.node.visible){
+        const tooBroad=machine.id==='gb200rack' && ['cabinet','computes','switches','backplane','liquid'].includes(selected);
+        if(n?.node.visible && !tooBroad){
           selectedOutline.setFromObject(n.node);
           selectedOutline.visible=true;
         }else selectedOutline.visible=false;

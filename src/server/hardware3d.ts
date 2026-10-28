@@ -448,9 +448,18 @@ function rackFrame(g:THREE.Group){
       part(g,14,4,13,x,y,-563,M.steel);
     }
   }
-  for(const x of [-352,352]){
-    part(g,4,2000,1120,x,1075,0,M.darkSteel);
-    for(let i=0;i<28;i++)part(g,5,12,33,x,180+i*64,-190+(i%3)*178,M.black);
+  // Left-hand steel skin, right-hand service cutaway. The open side exposes the
+  // liquid/cable infrastructure instead of presenting a blank appliance-like slab.
+  part(g,4,2000,1120,-352,1075,0,M.darkSteel);
+  for(let i=0;i<28;i++)part(g,5,12,33,-353,180+i*64,-190+(i%3)*178,M.black);
+  for(let i=0;i<23;i++){
+    const y=128+i*84;
+    part(g,8,9,1098,351,y,0,M.darkSteel,true);
+    part(g,10,9,27,354,y,-533,M.steel);
+    part(g,10,9,27,354,y,533,M.steel);
+  }
+  for(const z of [-538,-265,15,290,537]){
+    part(g,8,1970,9,353,1066,z,M.graphite);
   }
   // vertical rear power bar
   part(g,53,1880,29,260,1060,-557,M.copper,true);
